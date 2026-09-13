@@ -1,0 +1,26 @@
+{
+  "mcp": {
+    "github": {
+      "type": "command",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_TOKEN}"
+      }
+    }
+  },
+  "permission": {
+    "file": {
+      ".env*": "deny"
+    },
+    "bash": {
+      "npm *": "allow",
+      "git *": "allow",
+      "test *": "allow"
+    },
+    "skill": {
+      "dlt-hosted-checkout-api": "allow",
+      "payment-link-platform-conventions": "allow"
+    }
+  }
+}

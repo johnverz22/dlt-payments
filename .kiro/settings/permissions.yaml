@@ -1,0 +1,10 @@
+file:
+  - pattern: ".env*"
+    allow: false
+bash:
+  - pattern: "npm *"
+    allow: true
+  - pattern: "git *"
+    allow: true
+  - pattern: "*"
+    allow: false
