@@ -3,7 +3,13 @@
  * Backed by dummy-data stub (lib/dlt-transaction-service.ts).
  */
 
+import type { Metadata } from "next";
 import { TransactionsTable } from "@/components/tables/transactions-table";
+
+export const metadata: Metadata = {
+  title: "Transactions",
+  description: "View and manage all your generated payment links and transaction history.",
+};
 
 export default function TransactionsPage() {
   return (

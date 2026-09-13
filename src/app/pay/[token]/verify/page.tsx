@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { VerifyPoller } from "../../../../components/verify-poller";
+
+export const metadata: Metadata = {
+  title: "Verifying Payment",
+};
 
 interface VerifyPageProps {
   params: Promise<{ token: string }>;

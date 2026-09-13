@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { readLinkToken } from "../../../lib/link-token";
 import { formatDisplayAmount, computeVat, formatCents } from "../../../lib/money";
 import { syncPayment, DltAuthError } from "../../../lib/dlt-client";
@@ -18,6 +19,19 @@ const DEFAULT_LABELS = {
   product_description: "Description",
   product_reference_id: "Reference",
 };
+
+export async function generateMetadata({ params }: PayPageProps): Promise<Metadata> {
+  const { token } = await params;
+  try {
+    const payload = await readLinkToken(token);
+    const amount = formatDisplayAmount(payload.amount);
+    return {
+      title: `Pay ${amount} — ${payload.product_name}`,
+    };
+  } catch {
+    return { title: "Payment" };
+  }
+}
 
 export default async function PayPage({ params }: PayPageProps) {
   const { token } = await params;
