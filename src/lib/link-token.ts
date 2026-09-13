@@ -26,11 +26,18 @@ export interface PaymentLinkPayload {
   dlt_access_token: string;
 
   /** Max 60 chars (app-level cap; DLT allows 80) */
-  product_name?: string;
-  /** Max 120 chars. Treat as required — DLT 500s without it in practice. */
-  product_description?: string;
+  product_name: string;
+  /** Max 120 chars. Required — DLT 500s without it in practice. */
+  product_description: string;
   /** Max 40 chars */
-  product_reference_id?: string;
+  product_reference_id: string;
+
+  /**
+   * VAT rate in basis points (e.g. 1200 = 12.00%).
+   * Display-only — the full VAT-inclusive amount is what gets submitted to DLT.
+   * Defaults to 1200 (12%) when absent.
+   */
+  vat_rate?: number;
 
   labels?: {
     product_name?: string;

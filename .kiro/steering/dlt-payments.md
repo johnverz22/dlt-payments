@@ -48,11 +48,22 @@ The payor who opens `/pay/[token]` has **no session cookie** — `dlt_session` b
 ```
 
 - `product_description` is technically optional per DLT's docs but **DLT's server 500s if it's omitted in practice** — treat it as required.
+- `product_name`, `product_description`, `product_reference_id` are **required at link creation** (min 1 char each) — the `POST /api/payment/create-link` schema enforces this; the API returns 400 if any are missing.
 - `time_offset` and `channel` are hardcoded server-side constants (`"+08:00"`, `4`) — never derived from client input.
 - `amount`: `0 < amount <= 500000.00`, validated via `lib/money.ts`, never `parseFloat`.
 - `merchant_transaction_id`: ASCII `[A-Za-z0-9_-]`, max 45 chars, generated once, never regenerated on retry.
 - Billing address is **structured fields**, not one free-text string: `address_line_one` (required), `address_line_two` (optional), `city_municipality` (required), `state_province_region` (required), `country_code` (required, default `"PH"`), `postal_code` (required).
 - Never send card fields (`card_number`, `ccv`, etc.) or `device.*` 3DS fields — DLT v4.0 Hosted Checkout rejects them outright; there is no `is_card_payment: true` branch that accepts raw card data in this version.
+
+## JWE token in the payment link URL
+
+Place the token directly in the path segment — **no `encodeURIComponent`**. JWE compact serialization uses only base64url characters (`[A-Za-z0-9_-]`) plus `.` separators; all are URL-safe in a path segment. Using `encodeURIComponent` would inflate the URL by ~30% (percent-encoding the dots) for zero benefit. The URL is built as:
+
+```ts
+const url = `${appUrl}/pay/${token}`; // correct — no encodeURIComponent
+```
+
+`MAX_LINK_URL_LENGTH` defaults to 4096 (env schema rejects values outside 500–8000).
 
 ## Error handling — never auto-resubmit
 

@@ -34,6 +34,28 @@ app/api/auth/{login,logout}, app/api/payment/{create-link,submit,sync,brands}, a
 - **Token expiry is strict everywhere** (`/pay/[token]`, `/api/payment/brands`, `/api/payment/submit`, `/api/payment/sync`) via the single shared `isTokenExpired` utility — no endpoint hand-rolls its own check, and there is no exception for "payment was probably in flight."
 - **CSRF:** Origin/Referer check on every state-changing POST; double-submit `x-csrf-token` additionally required on `create-link` and `submit`.
 - **JWE:** `dir` / `A256GCM`, `kid`-based key rotation, independent secret pairs for sessions vs. links. Never share a secret between the two.
+- **JWE tokens in URLs:** place the token directly in the path segment — **no `encodeURIComponent`**. JWE compact serialization is pure base64url (`[A-Za-z0-9_-]`) plus `.` separators; all URL-safe. Wrapping it in `encodeURIComponent` inflates the URL by ~30% for no benefit.
+
+## PaymentLinkPayload — key fields (see DESIGN.md §3.2 for full shape)
+
+- `product_name`, `product_description`, `product_reference_id` — **required** at link creation (min 1 char each). The API returns 400 if any are missing.
+- `vat_rate` — optional integer (basis points, e.g. `1200` = 12%). **Display-only** — the full VAT-inclusive `amount` is what goes to DLT. Used to render a base/VAT/total breakdown on both the merchant form and the payor pay page. Formula: `vatCents = round(total × rate / (10000 + rate))`.
+- `labels` — optional map of custom field labels (merchant's localStorage preference, stamped into the token at creation). Payor pay page resolves these; falls back to "Product / Description / Reference".
+
+## Custom field labels — persistence
+
+Labels (`product_name`, `product_description`, `product_reference_id` display names) are stored in `localStorage['dlt_payee_label_preferences']`. Origin-scoped (per browser/device). No server storage. Stamped into `PaymentLinkPayload.labels` at creation so the payor sees the same labels without an extra round-trip.
+
+## lib/money.ts exports
+
+- `isValidAmount(amount)` — validates decimal string + range
+- `formatDisplayAmount(amount)` — display-only Intl formatting
+- `computeVat(amount, rateBps?)` — integer-cents VAT breakdown: `{ baseCents, vatCents, totalCents }`
+- `formatCents(cents)` — display-only cents formatter
+
+## Environment
+
+- `MAX_LINK_URL_LENGTH` — default **4096** (raised from original 2000). Schema rejects values outside 500–8000. Raise freely in `.env`.
 
 ## Commands
 

@@ -34,9 +34,16 @@ interface PaymentLinkPayload {
   service_code: string;
   dlt_access_token: string;       // copied from the payee's session at creation time
 
-  product_name?: string;
-  product_description?: string;   // see 1.3 — treat as effectively required
-  product_reference_id?: string;
+  product_name: string;           // max 60 — REQUIRED (was optional in v2 spec)
+  product_description: string;    // max 120 — REQUIRED (DLT 500s without it)
+  product_reference_id: string;   // max 40 — REQUIRED
+
+  /**
+   * VAT rate in basis points (e.g. 1200 = 12.00%). Display-only.
+   * The full VAT-inclusive amount is submitted to DLT unchanged.
+   * Defaults to 1200 (12%) on the pay page when absent.
+   */
+  vat_rate?: number;
 
   labels?: {
     product_name?: string;
@@ -169,9 +176,17 @@ interface PaymentLinkPayload {
   service_code: string;
   dlt_access_token: string;          // never logged, never sent to the client
 
-  product_name?: string;             // max 60
-  product_description?: string;      // max 120 — treat as required (DLT 500s without it)
-  product_reference_id?: string;     // max 40
+  product_name: string;              // max 60 — REQUIRED at link creation
+  product_description: string;       // max 120 — REQUIRED at link creation (DLT 500s without it)
+  product_reference_id: string;      // max 40 — REQUIRED at link creation
+
+  /**
+   * VAT rate in basis points (e.g. 1200 = 12.00%). Display-only — the full
+   * VAT-inclusive amount is what gets submitted to DLT. Defaults to 1200 when
+   * absent. Not sent to DLT; used only to show the base/VAT/total breakdown
+   * to the merchant (create-link form) and payor (pay page).
+   */
+  vat_rate?: number;
 
   labels?: {
     product_name?: string;
@@ -256,6 +271,36 @@ Unchanged from spec §7.3 — dummy-data stub for this iteration, `ITransactionS
 
 All variables from spec §10 carry forward unchanged. No new environment variables are required — the brand-lookup and corrected submit flow use the same `DLT_API_BASE_URL` and the credentials already embedded in tokens/sessions. Confirm `DLT_API_BASE_URL` actually resolves to `https://checkout.dxp.dtic.com.ph` (the v4.0 reference's real base URL) rather than a placeholder — the original spec used an example domain.
 
+### 6.1 `MAX_LINK_URL_LENGTH`
+
+Default **4096** (raised from the original 2000). JWE compact serialization uses only base64url characters (`[A-Za-z0-9_-]`) plus `.` separators — all URL-safe in a path segment. The token is placed in the URL path **without** `encodeURIComponent` (which would wastefully inflate the URL by percent-encoding the dots). 4096 comfortably accommodates a realistic DLT OAuth token embedded in the payload; set higher if needed, up to 8000 (practical browser limit; the env schema rejects values outside 500–8000).
+
+---
+
+## 6.2 VAT transparency feature
+
+**Display-only — nothing changes in the DLT submission path.**
+
+The merchant can set a VAT rate (%) on the link creation form (defaults to 12%). This is stored as `vat_rate` (integer basis points, e.g. `1200` = 12.00%) in the encrypted `PaymentLinkPayload`. It is purely cosmetic:
+
+- **Merchant form:** a live VAT breakdown (base / VAT / total) is shown as the merchant types the amount.
+- **Payor pay page:** the same breakdown is displayed in the product summary card before the billing form.
+- `vat_rate` is **never sent to DLT**. DLT always receives the full VAT-inclusive `amount` string unchanged.
+- Formula (VAT-inclusive, integer-cents): `vatCents = round(totalCents × rate / (10000 + rate))`, `baseCents = totalCents − vatCents`. Implemented in `lib/money.ts` (`computeVat`, `formatCents`).
+
+---
+
+## 6.3 Required product fields and custom labels
+
+`product_name`, `product_description`, and `product_reference_id` are **required** at link creation (min 1 char each, validated in `POST /api/payment/create-link` schema). Omitting any one returns 400.
+
+**Custom labels** let merchants rename these fields for their use case (e.g. "Plan Name", "Provider", "Policy Number"). Labels are persisted to `localStorage['dlt_payee_label_preferences']` on the merchant's browser — origin-scoped, no server storage needed, acceptable tradeoff for a cosmetic preference. Labels are stamped into the `PaymentLinkPayload.labels` map at creation time so the payor pay page can use the same labels without any extra round-trip.
+
+Payor pay page rendering:
+- A product summary card (amount header + `<dl>` with resolved labels and values) renders above the billing form.
+- Labels fall back to generic defaults ("Product", "Description", "Reference") if none were set.
+- Billing form shows the VAT breakdown (§6.2) just above the "Pay" button if `vat_rate` is present.
+
 ---
 
 ## 7. Open items before/at implementation time
@@ -263,4 +308,4 @@ All variables from spec §10 carry forward unchanged. No new environment variabl
 1. **Webhooks are out of scope for this iteration.** DLT's v4.0 reference recommends signed merchant webhooks as the authoritative status channel, with `/sync` for recovery only. This platform relies solely on `/sync` (browser-driven polling), which is explicitly supported but is *recovery-oriented*, not the primary channel DLT recommends. Acceptable for v1 given the transaction log is a stub anyway; flag as a fast-follow once a real transaction store exists (a webhook needs somewhere durable to write to).
 2. Confirm the production `DLT_API_BASE_URL`.
 3. Confirm final `merchant_transaction_id` generation is bounded to 45 chars and the allowed character set at the point of generation (nanoid alphabet must be restricted to `[A-Za-z0-9_-]`).
-4. Confirm `MAX_LINK_URL_LENGTH` against real browsers/proxies — now more pressing, since `PaymentLinkPayload` is larger (carries an access token), so the encrypted token itself is meaningfully longer than in the original spec. Budget for this in testing (§ Tasks, "link length regression test").
+4. ~~Confirm `MAX_LINK_URL_LENGTH` against real browsers/proxies~~ — **resolved**: default raised to 4096; token placed in URL path without `encodeURIComponent` (JWE alphabet is already URL-safe); env schema rejects values outside 500–8000. See §6.1.

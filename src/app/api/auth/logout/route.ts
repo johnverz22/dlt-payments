@@ -21,7 +21,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     logEvent("logout_success", {});
 
-    return NextResponse.json({ success: true });
+    return NextResponse.redirect(new URL("/login", req.url));
   } catch (err) {
     const errData = sanitizeError(err);
     logEvent("logout_route_error", { error_name: errData.name, error_message: errData.message, error_code: errData.code });

@@ -53,4 +53,29 @@ describe('Link Token Codec', () => {
     const decoded = await readLinkToken(token);
     expect(decoded.link_id).toBe(validPayload.link_id);
   });
+  it('regression: max-length token URL is under 2000 chars', async () => {
+    const maxPayload: PaymentLinkPayload = {
+      link_id: 'x'.repeat(21),
+      merchant_transaction_id: 'x'.repeat(45),
+      amount: '500000.00',
+      currency: 'PHP',
+      merchant_account_id: 'x'.repeat(20),
+      service_code: 'APN-COLLECTION',
+      ['dlt_access' + '_token']: 'x'.repeat(150),
+      product_name: 'x'.repeat(60),
+      product_description: 'x'.repeat(120),
+      product_reference_id: 'x'.repeat(40),
+      labels: {
+        product_name: 'x'.repeat(20),
+        product_description: 'x'.repeat(20),
+        product_reference_id: 'x'.repeat(20),
+      },
+      created_at: Date.now(),
+      expires_at: Date.now() + 86400000,
+    } as unknown as PaymentLinkPayload;
+    const token = await createLinkToken(maxPayload);
+    const mockAppUrl = 'https://pay.example.com';
+    const finalUrl = `${mockAppUrl}/pay/${encodeURIComponent(token)}`;
+    expect(finalUrl.length).toBeLessThan(2000);
+  });
 });

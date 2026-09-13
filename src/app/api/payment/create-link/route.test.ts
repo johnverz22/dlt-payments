@@ -67,20 +67,28 @@ describe('POST /api/payment/create-link', () => {
   }
 
   it('creates link successfully on valid input', async () => {
-    const req = createReq({ amount: '1500.00' });
+    const req = createReq({
+      amount: '1500.00',
+      product_name: 'Basic Plan',
+      product_description: 'Monthly subscription',
+      product_reference_id: 'REF-001',
+    });
     const res = await POST(req);
     const data = await res.json();
-    
+
     expect(res.status).toBe(200);
     expect(data.url).toMatch(/^http:\/\/localhost:3000\/pay\/.+/);
     expect(data.link_id).toBeDefined();
     expect(data.merchant_transaction_id).toBeDefined();
-    
+
     // Verify the embedded credentials logic
     expect(linkToken.createLinkToken).toHaveBeenCalled();
     const calledPayload = vi.mocked(linkToken.createLinkToken).mock.calls[0][0];
     expect(calledPayload.amount).toBe('1500.00');
     expect(calledPayload.merchant_account_id).toBe('m_acc_123');
+    expect(calledPayload.product_name).toBe('Basic Plan');
+    expect(calledPayload.product_description).toBe('Monthly subscription');
+    expect(calledPayload.product_reference_id).toBe('REF-001');
     const tokenKey = 'dlt_access' + '_token' as keyof typeof calledPayload;
     expect(calledPayload[tokenKey]).toBe('test_dlt_token'); // embedded credential correctly copied
   });

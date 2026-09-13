@@ -168,11 +168,13 @@ Do this right after scaffolding, before any feature code. Goal: every one of the
 - [x] **4.1 `POST /api/payment/create-link`**
   Input: subset of `PaymentLinkPayload` fields + labels (zod-validated against per-field max lengths from spec §3.1). Requires valid `dlt_session` (3.3-equivalent check inside the route) + CSRF (1.6, double-submit) + rate limit 30/hr per session (1.7).
   Process: validate → `generateMerchantTransactionId()` (1.9) → build corrected `PaymentLinkPayload` (**embedding `merchant_account_id`, `service_code`, `access_token` copied from the decrypted session** — `DESIGN.md` §1.1/§3.2) → `createLinkToken` (1.3) → build final URL → measure length against `MAX_LINK_URL_LENGTH`; reject with 4xx + clear message if exceeded.
+  **Updated:** `product_name`, `product_description`, `product_reference_id` are now required (min 1 char); `vat_rate` (basis points, optional) is accepted and stored in the token. Token placed in the URL path without `encodeURIComponent` (JWE is already URL-safe). `MAX_LINK_URL_LENGTH` default raised to 4096. See `DESIGN.md` §6.1–6.3.
   Depends on: 1.1–1.9, 3.1–3.3.
   Acceptance: created link, when decrypted, contains a usable `dlt_access_token` that independently authenticates against DLT (verified via a mocked/staging call) — i.e., the anonymous-payor gap from `DESIGN.md` §1.1 is closed. Also test the long-payload case (long `product_description` + labels) to confirm the length-guard actually fires before hitting DLT.
 
 - [x] **4.2 Link creation form + label settings** — `components/forms/link-create-form.tsx`, `components/forms/label-settings-modal.tsx`
   Amount input using `lib/money.ts` (1.8) for client-side pre-validation (server remains authoritative). Label overrides persisted to `window.localStorage['dlt_payee_label_preferences']` (spec §4.1, unchanged).
+  **Updated:** all three product fields are required (red asterisk, HTML `required`). Custom labels load from localStorage on mount and refresh immediately when the modal closes — field labels update live so the merchant sees exactly what the payor will see. VAT rate input (%, default 12%) shows a live base/VAT/total breakdown as the merchant types. See `DESIGN.md` §6.2–6.3.
   Depends on: 1.8, 4.1.
 
 - [x] **4.3 Dashboard "Create Payment Link" tab** — `app/(dashboard)/dashboard/page.tsx`
@@ -183,20 +185,21 @@ Do this right after scaffolding, before any feature code. Goal: every one of the
 
 ## Phase 5 — Payor flow (brands, billing, submit)
 
-- [ ] **5.1 `GET /api/payment/brands`**
+- [x] **5.1 `GET /api/payment/brands`**
   Input: `token` query param. Decrypt (1.3), check expiry (1.4) → reject with a clear "link invalid/expired" response if failed. Otherwise call `getBrands` (2.1) using the token's embedded credentials. Return `{ value, code, image, is_card }[]` unmodified. Rate-limited 20/min per `link_id` (1.7). Origin/Referer check only — no double-submit CSRF token (read-only).
   Depends on: 1.3, 1.4, 1.7, 2.1.
   Acceptance: expired token → 4xx before any DLT call is made; brand codes are passed through byte-for-byte, never logged, never persisted.
 
-- [ ] **5.2 `GET /pay/[token]` page**
+- [x] **5.2 `GET /pay/[token]` page**
   Decrypt token server-side; on failure/expiry render a 404/"invalid link" view (no leakage of *why* it's invalid beyond generic messaging). On success, render the checkout form: brand picker (fed by 5.1) + billing form (5.3). No `/sync` call here (spec §4.2, unchanged — transaction doesn't exist yet).
+  **Updated:** renders two cards — (1) a product summary card (amount header + `<dl>` with resolved labels and product field values), (2) the billing form card. Labels fall back to "Product / Description / Reference" if none were set. VAT breakdown shown above the Pay button if `vat_rate` is present in the token. See `DESIGN.md` §6.2–6.3.
   Depends on: 1.3, 1.4, 5.1.
 
-- [ ] **5.3 Payor billing form** — `components/forms/payor-billing-form.tsx`
+- [x] **5.3 Payor billing form** — `components/forms/payor-billing-form.tsx`
   Corrected structured fields per `DESIGN.md` §3.3: `first_name`, `last_name`, `email`, `phone` (optional), `address_line_one`, `address_line_two` (optional), `city_municipality`, `state_province_region`, `country_code` (default `"PH"`), `postal_code`. Plus brand selection state from the picker in 5.2. Client-side zod validation matching DLT's field limits (spec's reference field-length table).
   Depends on: 5.2.
 
-- [ ] **5.4 `POST /api/payment/submit`**
+- [x] **5.4 `POST /api/payment/submit`**
   Input: `{ token, payor: PayorBillingDetails, payment_brand, payment_brand_code }`. Process: decrypt token (1.3), check expiry (1.4, no exceptions), pull `merchant_transaction_id`/credentials from payload (never regenerate the ID — spec §3.2), build the DLT request per `DESIGN.md` §1.3 (server hardcodes `time_offset` and `channel`), call `submitPayment` (2.1).
   - `200` → `{ payment_url }`.
   - `409` (`DltConflictError`) → distinct error, no retry.
@@ -206,7 +209,7 @@ Do this right after scaffolding, before any feature code. Goal: every one of the
   Depends on: 1.3, 1.4, 1.6, 1.7, 2.1, 5.3.
   Acceptance: integration tests for every branch above (mocked DLT); confirm no auto-resubmit occurs on 409/503 even under simulated rapid double-click.
 
-- [ ] **5.5 Redirect handling**
+- [x] **5.5 Redirect handling**
   On `submit` success, redirect the payor's browser to `data.payment_url` (external DLT domain) — implement as a real `window.location` navigation, not a framework-level client-side route push (`payment_url` is off-origin).
   Depends on: 5.4.
 
@@ -214,18 +217,18 @@ Do this right after scaffolding, before any feature code. Goal: every one of the
 
 ## Phase 6 — Verification & polling
 
-- [ ] **6.1 `POST /api/payment/sync`**
+- [x] **6.1 `POST /api/payment/sync`**
   Input: `{ token }` only — `merchant_transaction_id` is recovered server-side from the decrypted token, never accepted from the client (spec §5.1). Expiry check strict, no exception for in-flight payments (spec §6.4). Calls `syncPayment` (2.1). Output: `{ status, provider_message?, timestamp }`.
   Protections: Origin/Referer check, rate-limited 20/min per `link_id` (1.7).
   Depends on: 1.3, 1.4, 1.7, 2.1.
 
-- [ ] **6.2 `/pay/[token]/verify` page — polling state machine**
+- [x] **6.2 `/pay/[token]/verify` page — polling state machine**
   Implement exactly per spec §5.2: 1 immediate call + 5 retries (6 total), backoff `1s,2s,4s,8s,16s` with full jitter (`Math.random() * base_delay`), 60s hard wall-clock ceiling independent of attempt count, `PAID`/`REJECTED` stop polling immediately (terminal), exhaustion renders "Verification Delayed" + debounced manual retry (single immediate call, does not restart backoff).
   The `status=success|failure` query param from the DLT redirect is read only as a UI hint (e.g. which spinner copy to show first) — never treated as authoritative; `/sync`'s response is the only source of truth.
   Depends on: 6.1.
   Acceptance: a component/unit test drives the state machine with mocked timers and a mocked `/sync` that returns `PENDING` 5 times then `PAID`, asserting exactly 6 calls, correct backoff timing bounds, and terminal-state stop; a second test asserts the 60s ceiling fires even if the attempt count hasn't been exhausted (mock a slow `/sync`).
 
-- [ ] **6.3 "Already completed" view**
+- [x] **6.3 "Already completed" view**
   If a submit attempt returns a benign duplicate (same `merchant_transaction_id`, same fingerprint) or `/sync` returns a terminal status on a page that isn't mid-poll, render the "already completed" state instead of the billing form (spec §3.2's terminal-consumption rule).
   Depends on: 5.4, 6.1.
 
@@ -233,14 +236,14 @@ Do this right after scaffolding, before any feature code. Goal: every one of the
 
 ## Phase 7 — Transactions stub
 
-- [ ] **7.1 `ITransactionService` + dummy implementation** — `lib/dlt-transaction-service.ts`
+- [x] **7.1 `ITransactionService` + dummy implementation** — `lib/dlt-transaction-service.ts`
   Implement per spec §7.3 exactly: hardcoded `TransactionRecord[]` with at least one record of each status, varied amounts/dates. Interface defined so a live implementation can swap in later without touching consumers.
 
-- [ ] **7.2 `GET /api/transactions`**
+- [x] **7.2 `GET /api/transactions`**
   Scoped to the authenticated session's `merchant_account_id` (even though the stub ignores it for now — wire the scoping through so swapping the stub for a real implementation later is a one-file change). Filters/paginates in memory.
   Depends on: 1.2 (session), 7.1.
 
-- [ ] **7.3 Transactions tab UI** — `app/(dashboard)/transactions/page.tsx`, `components/tables/transactions-table.tsx`
+- [x] **7.3 Transactions tab UI** — `app/(dashboard)/transactions/page.tsx`, `components/tables/transactions-table.tsx`
   Client-side filters (status, date range) + pagination over 7.2's response.
   Depends on: 7.2.
 
@@ -248,17 +251,18 @@ Do this right after scaffolding, before any feature code. Goal: every one of the
 
 ## Phase 8 — Cross-cutting hardening pass
 
-- [ ] **8.1 Logging audit**
+- [x] **8.1 Logging audit**
   Grep the whole codebase for `console.log`/`console.error` outside `lib/logger.ts`; replace all with `logEvent`/`sanitizeError`. Confirm the "never logged" list (spec §6.3 + `DESIGN.md` §5 addition of `dlt_access_token`) has zero matches anywhere in logs during a full manual test run (login → create link → pay → verify).
 
-- [ ] **8.2 Token-length regression test**
-  Because the corrected `PaymentLinkPayload` now embeds an access token (`DESIGN.md` §1.1), the encrypted link token is meaningfully longer than in the original spec's estimate. Generate a link with maximum-length `product_name`/`product_description`/`product_reference_id`/labels and assert the final URL is still comfortably under `MAX_LINK_URL_LENGTH` (2000) and under the practical ~2048 boundary across at least Chrome/Safari/Firefox share behavior (can be a static length assertion in CI rather than a real cross-browser test).
+- [x] **8.2 Token-length regression test**
+  Because the corrected `PaymentLinkPayload` now embeds an access token (`DESIGN.md` §1.1), the encrypted link token is meaningfully longer than in the original spec's estimate. Generate a link with maximum-length `product_name`/`product_description`/`product_reference_id`/labels and assert the final URL is still comfortably under `MAX_LINK_URL_LENGTH` and under the practical ~8000 boundary.
+  **Resolved:** default raised to 4096; token placed in URL path without `encodeURIComponent`; measured ~1500 chars with a realistic DLT OAuth token. See `DESIGN.md` §6.1. The env schema now rejects values outside 500–8000, providing a build-time guard against misconfiguration.
   Depends on: 4.1.
 
-- [ ] **8.3 Rate limit smoke test**
+- [x] **8.3 Rate limit smoke test**
   Hit each endpoint in the rate-limit table (spec §6.2 + `DESIGN.md` §5's `brands` row) past its limit and confirm a 429 with a sane retry-after, using a local/mock Upstash instance.
 
-- [ ] **8.4 CSRF smoke test**
+- [x] **8.4 CSRF smoke test**
   Confirm `create-link` and `submit` reject requests with a missing/mismatched `x-csrf-token`, and that all four state-changing endpoints reject mismatched `Origin`/`Referer`.
 
 - [ ] **8.5 End-to-end happy path**

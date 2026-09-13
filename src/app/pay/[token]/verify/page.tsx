@@ -1,11 +1,4 @@
-/**
- * pay/[token]/verify/page.tsx — Polling landing page after DLT redirect.
- * DLT redirects here as: /pay/[token]/verify?status=success|failure
- * The ?status param is a NON-AUTHORITATIVE hint only — /sync is the source of truth.
- * Polling state machine: 1 immediate + 5 retries (6 total), backoff 1/2/4/8/16s
- * with full jitter, 60s hard ceiling. See spec §5.2.
- * TODO (Phase 6 — task 6.2): implement.
- */
+import { VerifyPoller } from "../../../../components/verify-poller";
 
 interface VerifyPageProps {
   params: Promise<{ token: string }>;
@@ -16,25 +9,13 @@ export default async function VerifyPage({
   params,
   searchParams,
 }: VerifyPageProps) {
-  const { token: _token } = await params;
-  const { status: _statusHint } = await searchParams;
-
-  // TODO (Phase 6 task 6.2):
-  // 1. Render client component with polling state machine
-  // 2. Status hint (success/failure) used only to pick initial spinner copy
-  // 3. POST /api/payment/sync → authoritative status
-  // 4. PAID/REJECTED → stop, render result
-  // 5. Exhaustion → "Verification Delayed" + debounced manual retry
+  const { token } = await params;
+  const { status: statusHint } = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm text-center">
-        <h1 className="mb-4 text-xl font-semibold text-slate-900">
-          Verifying Payment…
-        </h1>
-        <p className="text-sm text-slate-500">
-          TODO (Phase 6 task 6.2): polling state machine.
-        </p>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-12">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white px-8 pb-10 pt-8 shadow-xl shadow-slate-200/50 text-center">
+        <VerifyPoller token={token} statusHint={statusHint} />
       </div>
     </main>
   );

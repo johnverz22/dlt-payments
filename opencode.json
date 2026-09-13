@@ -1,26 +1,31 @@
 {
+  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "github": {
-      "type": "command",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "enabled": true,
+      "environment": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_TOKEN}"
       }
     }
   },
-  "permission": {
-    "file": {
-      ".env*": "deny"
-    },
-    "bash": {
-      "npm *": "allow",
-      "git *": "allow",
-      "test *": "allow"
-    },
-    "skill": {
-      "dlt-hosted-checkout-api": "allow",
-      "payment-link-platform-conventions": "allow"
+  "provider": {
+    "qwen": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Qwen API Proxy",
+      "options": {
+        "baseURL": "https://qwen.aikit.club/v1",
+        "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMyY2VhM2MyLTYxMTgtNDE1MS04MmQwLWNkMzY0ZGEwYWQzOCIsImxhc3RfcGFzc3dvcmRfY2hhbmdlIjoxNzg2NjI2NzM2LCJleHAiOjE3OTE4NTQ2MTl9.FAgXJbjTmG4lSZAF2SGkaSb9J9okTo4T1Is1S6TtCFA"
+      },
+      "models": {
+        "qwen3-coder-plus": {
+          "name": "Qwen 3 Coder Plus"
+        },
+        "qwen3.8-max": {
+          "name": "Qwen 3.8 Max"
+        }
+      }
     }
   }
 }

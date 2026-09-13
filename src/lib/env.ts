@@ -25,11 +25,13 @@ const envSchema = z.object({
   // Application base URL
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
 
-  // Link token size guard
+  // Link token size guard — JWE is base64url + dots, all URL-safe.
+  // Default 4096; raise freely up to ~8000 (practical browser limit).
   MAX_LINK_URL_LENGTH: z
     .string()
     .optional()
-    .transform((v) => (v ? parseInt(v, 10) : 2000)),
+    .transform((v) => (v ? parseInt(v, 10) : 4096))
+    .pipe(z.number().int().min(500).max(8000)),
 });
 
 function parseEnv() {

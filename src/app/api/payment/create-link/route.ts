@@ -25,9 +25,10 @@ const generateLinkId = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno
 
 const createLinkSchema = z.object({
   amount: z.string().refine(isValidAmount, "Invalid amount"),
-  product_name: z.string().max(60).optional(),
-  product_description: z.string().max(120).optional(),
-  product_reference_id: z.string().max(40).optional(),
+  vat_rate: z.number().int().min(0).max(10000).optional(), // basis points, e.g. 1200 = 12%
+  product_name: z.string().min(1, "Product name is required").max(60),
+  product_description: z.string().min(1, "Product description is required").max(120),
+  product_reference_id: z.string().min(1, "Reference ID is required").max(40),
   labels: z.object({
     product_name: z.string().optional(),
     product_description: z.string().optional(),
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       product_name: data.product_name,
       product_description: data.product_description,
       product_reference_id: data.product_reference_id,
+      vat_rate: data.vat_rate,
       labels: data.labels,
       created_at: now,
       expires_at,
@@ -91,7 +93,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const token = await createLinkToken(payload);
     const appUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '');
-    const url = `${appUrl}/pay/${encodeURIComponent(token)}`;
+    // JWE compact serialization uses only base64url chars ([A-Za-z0-9_-]) and
+    // '.' separators — all URL-safe. encodeURIComponent is not needed and would
+    // inflate the URL by percent-encoding the dots.
+    const url = `${appUrl}/pay/${token}`;
 
     if (url.length > (env.MAX_LINK_URL_LENGTH ?? 2000)) {
       logEvent("create_link_url_too_long", { merchant_account_id: session.merchant_account_id, link_id });

@@ -131,3 +131,13 @@ Run `npm run verify` before marking any task done. It runs:
 2. `npm run lint` — ESLint passes
 3. `npm test` — Vitest passes
 4. `bash scripts/check-no-raw-logging.sh` — no `console.log`/`console.error` outside `lib/logger.ts`
+
+---
+
+## 9. UI & Design System
+
+- **Tailwind v4:** Configure theme variables directly in `src/app/globals.css` using `@theme inline`. There is no `tailwind.config.ts`.
+- **No Component Libraries:** Do not install Shadcn, Radix, or Heroicons. Use native HTML with Tailwind classes and inline SVGs.
+- **Form Controls:** Use `bg-slate-50/70 border border-slate-200 rounded-lg px-3.5 py-2.5 text-slate-900 placeholder-slate-400 transition-all duration-150 outline-none focus:border-[#0052FF] focus:ring-[3px] focus:ring-[rgba(0,82,255,0.15)]` for text inputs.
+- **Primary Buttons:** Use `bg-[#0052FF] hover:bg-[#0045d8] rounded-xl shadow-lg shadow-blue-500/25 text-white font-semibold`.
+- **Cards & Layouts:** Use `rounded-2xl` and `shadow-xl shadow-slate-200/50` to wrap main page content, with uppercase tracking section labels (`text-xs font-bold uppercase tracking-wider text-slate-500`).

@@ -31,11 +31,25 @@ app/api/auth/{login,logout}, app/api/payment/{create-link,submit,sync,brands}, a
 - **Embedded Credentials:** The payor who opens `/pay/[token]` has no session. To allow server-side calls on their behalf, `merchant_account_id`, `service_code`, and `dlt_access_token` are embedded into the `PaymentLinkPayload` at creation.
 - **Brands Step:** Must call `GET /api/v1/collection/apn/brands` with the embedded credentials to present brand choices before submit.
 - **409 / 503:** NEVER auto-resubmit on `409` (conflict) or `503` (ambiguous). 503 means check status via `/sync`.
+- **Required product fields:** `product_name`, `product_description`, `product_reference_id` are all required at link creation (min 1 char each). API returns 400 if any are missing.
+- **JWE token in URL:** place the token directly in the path segment — no `encodeURIComponent`. JWE compact serialization is pure base64url + dots, all URL-safe. `MAX_LINK_URL_LENGTH` defaults to 4096.
+
+## PaymentLinkPayload — key fields
+
+- `product_name`, `product_description`, `product_reference_id` — **required** strings (min 1 char).
+- `vat_rate` — optional integer, basis points (e.g. `1200` = 12%). **Display-only** — never sent to DLT. Used to render a base/VAT/total breakdown on the merchant form and payor pay page. Formula: `vatCents = round(total × rate / (10000 + rate))`. Implemented in `lib/money.ts` (`computeVat`, `formatCents`).
+- `labels` — optional map of custom display names for the three product fields, stamped at creation from merchant's `localStorage['dlt_payee_label_preferences']`. Payor pay page falls back to "Product / Description / Reference" if absent.
 
 ## Invariants
 - **Never Log Allowlist:** `client_id`, `client_secret`, `access_token`, `dlt_access_token`, decrypted token contents, `Authorization` headers, raw payor PII, and raw DLT bodies must **never** be logged. Use `lib/logger.ts`.
 - **Money:** `amount` is always a decimal string (`"1500.00"`). Validated via `/^\d{1,10}\.\d{2}$/` and integer-cents bounds check `0 < amount <= 500000.00`. Never `parseFloat`.
 - **Transaction IDs:** `merchant_transaction_id` is generated once at link creation. Never regenerated on retry.
+
+## UI & Styling Conventions
+- **Tailwind v4:** The app uses Tailwind CSS v4 with `@theme inline` in `src/app/globals.css`. Do not create or look for a `tailwind.config.ts`.
+- **Component Library:** There is **NO** external component library (no shadcn/ui, Radix, etc.). All UI components are hand-crafted.
+- **Design Language:** Use `rounded-2xl` for cards, deep shadows (`shadow-xl shadow-slate-200/50`), and `bg-slate-50/70` for inputs with specific focus states: `focus:border-[#0052FF] focus:ring-[3px] focus:ring-[rgba(0,82,255,0.15)]`. Primary CTAs should use `bg-[#0052FF] hover:bg-[#0045d8] shadow-lg shadow-blue-500/25`.
+- **Status Badges & Icons:** Use glowing animated icons for terminal states (e.g., emerald for PAID, amber for EXHAUSTED/PENDING, red for REJECTED) and colored badges for table rows.
 
 ## Antigravity Workflow
 - Each Phase in the task list should map to one Antigravity **implementation-plan** artifact.
