@@ -1,0 +1,53 @@
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": "01K6FA00000000000000000002",
+      "transaction_id": 1001,
+      "event_type": "dlt_response",
+      "direction": "dlt_to_merchant",
+      "captured_at": "2026-10-02T09:02:04+08:00",
+      "capture_format": "sanitized_snapshot",
+      "capture_status": "available",
+      "event_id": null,
+      "attempt_number": null,
+      "http_status": 200,
+      "delivery": null,
+      "response": {
+        "is_repeated_request": false,
+        "capture_stage": "prepared_for_return",
+        "body_capture_status": "captured_sanitized"
+      },
+      "payload": {
+        "success": true,
+        "data": {
+          "merchant_transaction_id": "ORDER-001",
+          "amount": "100.00",
+          "payment_status": "PENDING",
+          "is_card_payment": false,
+          "timestamp": "2026-10-02T01:02:03Z"
+        }
+      },
+      "omissions": [
+        { "field_path": "payload", "reason_code": "portal_field_allowlist" },
+        { "field_path": "response_body", "reason_code": "merchant_response_field_allowlist" },
+        { "field_path": "response_body.data.payment_url", "reason_code": "payment_url_excluded" }
+      ],
+      "retain_until": "2027-10-02T09:02:04+08:00",
+      "purged_at": null
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 25,
+    "total": 1,
+    "last_page": 1,
+    "coverage": {
+      "merchant_request": "not_captured",
+      "dlt_response": "captured",
+      "merchant_webhook_request": "not_captured",
+      "merchant_webhook_response": "not_captured"
+    }
+  }
+}

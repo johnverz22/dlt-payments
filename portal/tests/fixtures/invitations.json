@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "id": "9b94f9dc-5482-45a5-bc65-8b360d858fc7",
+      "email": "developer@example.com",
+      "role": "developer",
+      "status": "pending",
+      "invited_by": 42,
+      "sent": true,
+      "created_at": "2026-10-01T09:00:00Z",
+      "expires_at": "2026-10-03T09:00:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 25,
+    "total": 1,
+    "last_page": 1
+  }
+}

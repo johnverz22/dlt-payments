@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "has_authentication_token": true,
+    "has_secret_key": true,
+    "updated_at": "2026-09-01T00:00:00Z"
+  }
+}

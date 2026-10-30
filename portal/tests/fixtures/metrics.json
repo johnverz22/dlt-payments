@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "currency": "PHP",
+    "timezone": "Asia/Manila",
+    "from": "2026-09-01T00:00:00+08:00",
+    "to": "2026-10-01T00:00:00+08:00",
+    "as_of": "2026-10-01T01:00:00Z",
+    "date_basis": "created_at",
+    "collection_total": "127500.00",
+    "transaction_count": 100,
+    "successful_count": 85,
+    "pending_count": 10,
+    "rejected_count": 5,
+    "success_rate_percent": "85.00"
+  }
+}

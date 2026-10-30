@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "error_code": "RATE_LIMITED",
+  "message": "Too many requests"
+}

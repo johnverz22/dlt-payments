@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "message": "Success",
+  "data": [
+    {
+      "cc": "PHP",
+      "name": "Philippine Peso",
+      "symbol": "₱"
+    },
+    {
+      "cc": "USD",
+      "name": "US Dollar",
+      "symbol": "$"
+    }
+  ]
+}

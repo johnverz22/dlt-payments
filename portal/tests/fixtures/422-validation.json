@@ -1,0 +1,10 @@
+{
+  "success": false,
+  "error_code": "VALIDATION_ERROR",
+  "message": "Validation error",
+  "errors": {
+    "currency": [
+      "The selected currency is unsupported."
+    ]
+  }
+}

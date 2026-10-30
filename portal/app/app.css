@@ -1,0 +1,233 @@
+@import 'tailwindcss';
+@plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Semantic token → Tailwind theme mapping ──────────────────────────────
+   Utilities generated: bg-page, bg-surface, bg-surface-2, border-line,
+   border-line-strong, text-ink / ink-2 / ink-3, bg-primary, ring-primary,
+   bg-success-subtle, text-success-ink, fill-chart-1, bg-sidebar, etc.      */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-on-primary: var(--on-primary);
+
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-ink: var(--success-ink);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-ink: var(--danger-ink);
+  --color-on-danger: var(--on-danger);
+  --color-on-warning: var(--on-warning);
+  --color-info: var(--primary);
+  --color-info-subtle: var(--primary-subtle);
+  --color-info-ink: var(--primary);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-line: var(--sidebar-line);
+  --color-sidebar-ink: var(--sidebar-ink);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-accent: var(--sidebar-accent);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-partial: var(--chart-partial);
+
+  --shadow-card: 0 1px 2px 0 rgb(11 18 48 / 0.05);
+}
+
+/* ─── Light theme (default) ──────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  --page: #f6f8fc;
+  --surface: #ffffff;
+  --surface-2: #f1f4f9;
+  --line: #e3e8f0;
+  --line-strong: #cbd3e1;
+  --ink: #0b1230;
+  --ink-2: #4a5575;
+  --ink-3: #5b678a; /* darkened from #66718F to reach 4.5:1 on --page */
+
+  --primary: #2540f5;
+  --primary-hover: #1a30d4;
+  --primary-subtle: #eef1ff;
+  --on-primary: #ffffff;
+
+  --success: #12a66b;
+  --success-subtle: color-mix(in srgb, #12a66b 11%, #ffffff);
+  --success-ink: #0c7a4e; /* darker variant — body-text contrast */
+  --warning: #d98a00;
+  --warning-subtle: color-mix(in srgb, #d98a00 12%, #ffffff);
+  --warning-ink: #9a6200; /* darker variant — body-text contrast */
+  --danger: #d92d4a;
+  --danger-subtle: color-mix(in srgb, #d92d4a 10%, #ffffff);
+  --danger-ink: #b4233f;
+  --on-danger: #ffffff;
+  --on-warning: #2a1c00;
+
+  /* Navy sidebar identity (kept) */
+  --sidebar: #0c1445;
+  --sidebar-line: rgb(255 255 255 / 0.09);
+  --sidebar-ink: #c3cdf0;
+  --sidebar-muted: #8390c6;
+  --sidebar-hover: rgb(255 255 255 / 0.06);
+  --sidebar-active: rgb(255 255 255 / 0.12);
+  --sidebar-accent: #7a8dff;
+
+  --chart-1: var(--primary);
+  --chart-2: #14b8a6;
+  --chart-3: #f59e0b;
+  --chart-4: #8b5cf6;
+  --chart-5: #f43f5e;
+  --chart-partial: color-mix(in srgb, var(--primary) 40%, var(--surface));
+}
+
+/* ─── Dark theme ─────────────────────────────────────────────────────────── */
+html.dark {
+  color-scheme: dark;
+
+  --page: #0a0e1f;
+  --surface: #111731;
+  --surface-2: #172043;
+  --line: #232c52;
+  --line-strong: #34406f;
+  --ink: #e8ecfa;
+  --ink-2: #a5afcf;
+  --ink-3: #8490b5;
+
+  --primary: #6c80ff;
+  --primary-hover: #8796ff;
+  --primary-subtle: #1b2457;
+  --on-primary: #0a0e1f; /* dark text on the bright primary keeps ≥4.5:1 */
+
+  --success: #34d399;
+  --success-subtle: color-mix(in srgb, #34d399 16%, #111731);
+  --success-ink: #5fe3b3;
+  --warning: #fbbf24;
+  --warning-subtle: color-mix(in srgb, #fbbf24 16%, #111731);
+  --warning-ink: #fcd34d;
+  --danger: #fb7185;
+  --danger-subtle: color-mix(in srgb, #fb7185 16%, #111731);
+  --danger-ink: #fda4af;
+  --on-danger: #0a0e1f;
+  --on-warning: #0a0e1f;
+
+  --sidebar: #080c1c;
+  --sidebar-line: rgb(255 255 255 / 0.07);
+  --sidebar-ink: #aab4dd;
+  --sidebar-muted: #6b76a6;
+  --sidebar-hover: rgb(255 255 255 / 0.06);
+  --sidebar-active: rgb(255 255 255 / 0.12);
+  --sidebar-accent: #7a8dff;
+
+  --chart-partial: color-mix(in srgb, var(--primary) 45%, var(--surface));
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers that represent money / counts line up in columns */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* One consistent, visible focus treatment everywhere */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Form controls pick up theme-aware chrome (scrollbars, autofill, pickers) */
+input,
+select,
+textarea {
+  color-scheme: inherit;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset;
+  caret-color: var(--ink);
+}
+
+::placeholder {
+  color: var(--ink-3);
+  opacity: 0.7;
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+/* Theme-aware scrollbars (thin, token-colored) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Recharts chrome driven from tokens */
+.recharts-cartesian-axis-tick text {
+  fill: var(--ink-3);
+}
+.recharts-tooltip-cursor {
+  fill: var(--surface-2);
+}
+
+/* Motion: short and snappy; disabled for reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
